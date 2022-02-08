@@ -1,0 +1,44 @@
+---
+- name: Settings web-servers
+  hosts: web-servers
+  become: True 
+  gather_facts: no 
+
+  tasks: 
+    - name: Update package lists and Installation "Curl"
+      apt: 
+        name: curl
+        state: latest
+        update_cache: yes
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+
+    - name: Update apt and install "docker-ce"
+      apt: 
+        name: docker-ce
+        state: latest
+        update_cache: yes
+
+    - name: Creating directory "docker-nginx"
+      file: 
+        state: directory
+        path: /docker-nginx
+
+    - name: Copy "Dockerfile" in "docker-nginx" dir
+      ansible.builtin.copy:
+        src: /etc/ansible/my_project/Dockerfile
+        dest: /docker-nginx
+
+    - name: GO docker build
+      command: bash -c "docker build -t nginx:01 /docker-nginx"
+
+    - name: docker run
+      command: bash -c "docker run -d -p 1234:80 nginx:01"
